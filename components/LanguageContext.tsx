@@ -806,6 +806,20 @@ const translations: Record<Language, Record<string, string>> = {
     'rating_excellent': '爽到爆炸',
     'rating_perfect': '人生巅峰',
     'share_country': '工作国家/地区',
+
+    // 结果页面
+    'job_worth_result': '工作价值评估结果',
+    'result_description': '以下是您工作价值的详细评估结果和改进建议',
+    'your_score': '您的工作价值得分',
+    'ranking_information': '排名情况',
+    'your_score_is': '您的工作价值评分为',
+    'beat_percentage': '击败了全国',
+    'of_people': '的人',
+    'based_on_samples': '基于样本数据',
+    'insufficient_samples': '当前样本数量不足',
+    'sample_explanation': '需要至少1000个样本才能提供更准确的排名数据',
+    'improvement_suggestions': '改进建议',
+    'share_result': '分享结果',
   },
   en: {
     // Title and navigation

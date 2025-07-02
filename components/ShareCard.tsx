@@ -796,39 +796,50 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
         {/* 添加排名信息卡片 */}
         {isClient && (
           <div className="mb-5 md:mb-8">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-4 border border-blue-100 dark:border-blue-800">
-              <h2 className="text-base md:text-lg font-bold mb-2 flex items-center">
-                <Trophy className="w-4 h-4 md:w-5 md:h-5 mr-1.5 text-yellow-500" />
-                <span className="text-gray-800 dark:text-gray-200">{t('ranking_information')}</span>
-              </h2>
-              
-              {rankingData.isLoading ? (
-                <div className="flex items-center justify-center py-3">
-                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">加载中...</span>
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg md:rounded-xl p-3 md:p-5 shadow-sm transition-all hover:shadow-md">
+              <div className="flex items-start gap-2.5 md:gap-4">
+                <div className="text-2xl md:text-4xl flex-shrink-0 mt-0.5">🏆</div>
+                <div className="flex-1">
+                  <h3 className="text-base md:text-lg font-bold mb-1 md:mb-2 text-gray-800">{t('ranking_information')}</h3>
+                  
+                  {rankingData.isLoading ? (
+                    <div className="flex items-center py-2">
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <p className="text-xs md:text-sm text-gray-700">加载中...</p>
+                    </div>
+                  ) : rankingData.error ? (
+                    <p className="text-xs md:text-sm text-red-500 dark:text-red-400">{rankingData.error}</p>
+                  ) : rankingData.showRanking ? (
+                    <div>
+                      <p className="text-xs md:text-sm text-gray-700 leading-relaxed mb-2 md:mb-3">
+                        {t('your_score_is')} <span className="font-bold">{props.value}</span>，
+                        {t('beat_percentage')} <span className="text-red-500 dark:text-red-400 font-bold">{rankingData.percentile}%</span> {t('of_people')}
+                      </p>
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <div className={isMobile ? "flex flex-wrap gap-x-4 gap-y-1.5" : "grid grid-cols-2 gap-2"}>
+                          <div className="flex items-center text-xs">
+                            <span className="text-gray-500 mr-1">{t('based_on_samples')}:</span>
+                            <span className="font-medium text-gray-800">{rankingData.totalCount}</span>
+                          </div>
+                          <div className="flex items-center text-xs">
+                            <span className="text-gray-500 mr-1">{t('your_rank')}:</span>
+                            <span className="font-medium text-gray-800">#{rankingData.rank}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xs md:text-sm text-gray-700 leading-relaxed mb-2 md:mb-3">
+                        {t('insufficient_samples')}（{rankingData.totalCount || 0}）
+                      </p>
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <p className="text-xs text-gray-500">{t('sample_explanation')}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ) : rankingData.error ? (
-                <p className="text-sm text-red-500 dark:text-red-400 py-2">{rankingData.error}</p>
-              ) : rankingData.showRanking ? (
-                <div>
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {t('your_score_is')} <span className="font-bold">{props.value}</span>，
-                    {t('beat_percentage')} <span className="text-red-500 dark:text-red-400 font-bold">{rankingData.percentile}%</span> {t('of_people')}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                    （{t('based_on_samples')}：{rankingData.totalCount}）
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {t('insufficient_samples')}（{rankingData.totalCount || 0}）
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                    {t('sample_explanation')}
-                  </p>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         )}
