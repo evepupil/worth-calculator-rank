@@ -15,7 +15,10 @@ export async function GET() {
     const stats = {
       jobWorth: jobWorthStats,
       visits: visitStats,
-      scoreDistribution: scoreDistributionStats
+      scoreDistribution: {
+        ...scoreDistributionStats,
+        totalCount: jobWorthStats.total
+      }
     };
 
     return NextResponse.json({ success: true, data: stats });

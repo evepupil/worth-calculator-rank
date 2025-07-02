@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateScoreDistribution, getScorePercentile } from '@/lib/redis';
+import { getJobWorthStats } from '@/lib/supabase';
 
 // 使用Map记录最近的请求，避免重复处理
 // key: IP+分数，value: 时间戳
@@ -32,17 +33,23 @@ export async function POST(request: NextRequest) {
     if (lastRequest && now - lastRequest < RATE_LIMIT_WINDOW) {
       console.log(`防止重复请求: ${requestKey}, 间隔: ${now - lastRequest}ms`);
       
-      // 重复请求只返回排名数据，不更新统计
-      const percentileData = await getScorePercentile(score);
+      // 重复请求需要获取最新的样本数，但不更新统计
+      const [percentileData, jobWorthStats] = await Promise.all([
+        getScorePercentile(score),
+        getJobWorthStats()
+      ]);
+      
+      // 使用Supabase中的实际评估记录数量
+      const totalCount = jobWorthStats.total;
       
       // 检查样本数是否足够
-      const showRanking = percentileData.totalCount >= 1000;
+      const showRanking = totalCount >= 1;
       
       return NextResponse.json({
         success: true,
         percentile: showRanking ? percentileData.percentile : null,
         rank: showRanking ? percentileData.totalCount - percentileData.lowerCount : null,
-        totalCount: percentileData.totalCount,
+        totalCount: totalCount,
         showRanking,
         fromCache: true
       });
@@ -63,17 +70,23 @@ export async function POST(request: NextRequest) {
     // 更新分数分布统计
     await updateScoreDistribution(score);
     
-    // 获取分数百分位
-    const percentileData = await getScorePercentile(score);
+    // 并行获取分数百分位和Supabase统计
+    const [percentileData, jobWorthStats] = await Promise.all([
+      getScorePercentile(score),
+      getJobWorthStats()
+    ]);
+    
+    // 使用Supabase中的实际评估记录数量
+    const totalCount = jobWorthStats.total;
     
     // 检查样本数是否足够
-    const showRanking = percentileData.totalCount >= 1000;
+    const showRanking = totalCount >= 1;
     
     return NextResponse.json({
       success: true,
       percentile: showRanking ? percentileData.percentile : null,
       rank: showRanking ? percentileData.totalCount - percentileData.lowerCount : null,
-      totalCount: percentileData.totalCount,
+      totalCount: totalCount,
       showRanking
     });
     
