@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Wallet, Github, FileText, Book, History, Eye , Star} from 'lucide-react'; // 添加新图标
+import { Wallet, Github, FileText, Book, History, Eye , Star, Calendar, Clock, MapPin, Building, User, Briefcase, Users } from 'lucide-react'; // 添加新图标
 import Link from 'next/link'; // 导入Link组件用于导航
 import { useLanguage } from './LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { countryNames } from './LanguageContext';
+import { getValueAssessment, generateId } from '@/lib/utils';
 
 // 定义PPP转换因子映射表
 const pppFactors: Record<string, number> = {
@@ -920,7 +921,7 @@ const SalaryCalculator = () => {
     return countryNames.zh[countryCode] || countryCode || '未知';
   }, [language]);
   
-  // 保存当前记录到历史中
+  // 保存当前计算结果到历史记录
   const saveToHistory = useCallback(() => {
     if (!formData.salary || typeof window === 'undefined') return;
     
@@ -972,7 +973,7 @@ const SalaryCalculator = () => {
     }
     
     return newHistoryItem;
-  }, [formData, value, getValueAssessmentKey, getValueAssessment, selectedCountry, history, getCountryName, calculateWorkingDays, getDisplaySalary, formData.hasShuttle, formData.hasCanteen]);
+  }, [formData, value, getValueAssessmentKey, getValueAssessment, selectedCountry, history, getCountryName, calculateWorkingDays, getDisplaySalary]);
   
   // 删除单条历史记录
   const deleteHistoryItem = useCallback((id: string, e: React.MouseEvent) => {

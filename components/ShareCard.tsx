@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Download, Trophy, Github } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -248,35 +248,57 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
     setIsClient(true);
   }, []);
   
-  // 页面载入动画效果
-  useEffect(() => {
-    // 确保只在客户端执行
-    if (typeof window !== 'undefined') {
-      setFadeIn(true);
+  // 获取排名数据的函数
+  const fetchRankingData = useCallback(async () => {
+    try {
+      // 使用当前分数向后端请求排名数据
+      const response = await fetch('/api/job-worth-rank', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          score: parseFloat(props.value)
+        }),
+      });
       
-      // 获取排名数据
-      fetchRankingData();
+      const data = await response.json();
       
-      // 检查会话存储，看是否已提交过当前值
-      const storageKey = `submitted_${props.value}_${props.countryCode}`;
-      const hasSubmittedBefore = sessionStorage.getItem(storageKey) === 'true';
-      
-      // 如果未提交过，才提交评估数据
-      if (!hasSubmittedBefore && !hasSubmitted) {
-        submitEvaluationData();
-        setHasSubmitted(true);
-        // 标记为已提交
-        try {
-          sessionStorage.setItem(storageKey, 'true');
-        } catch (e) {
-          console.warn('无法访问会话存储', e);
-        }
+      if (data.success) {
+        setRankingData({
+          percentile: data.percentile,
+          rank: data.rank,
+          totalCount: data.totalCount,
+          // 修改阈值，使少量样本时也显示排名
+          showRanking: data.totalCount >= 1,
+          isLoading: false,
+          error: null
+        });
+      } else {
+        setRankingData({
+          percentile: null,
+          rank: null,
+          totalCount: 0,
+          showRanking: false,
+          isLoading: false,
+          error: data.error || '获取排名数据失败'
+        });
       }
+    } catch (error) {
+      console.error('获取排名数据失败:', error);
+      setRankingData({
+        percentile: null,
+        rank: null,
+        totalCount: 0,
+        showRanking: false,
+        isLoading: false,
+        error: '网络请求失败，无法获取排名数据'
+      });
     }
-  }, [props.value, props.countryCode, hasSubmitted]);
-
+  }, [props.value]);
+  
   // 提交评估数据到后端
-  const submitEvaluationData = async () => {
+  const submitEvaluationData = useCallback(async () => {
     try {
       // 准备提交的表单数据，从props中获取所有必要的值
       const formData = {
@@ -330,56 +352,34 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
       // 静默处理错误，不影响用户体验
       console.error('提交分享页面数据失败:', error);
     }
-  };
-  
-  // 获取排名数据的函数
-  const fetchRankingData = async () => {
-    try {
-      // 使用当前分数向后端请求排名数据
-      const response = await fetch('/api/job-worth-rank', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          score: parseFloat(props.value)
-        }),
-      });
+  }, [props]);
+
+  // 页面载入动画效果
+  useEffect(() => {
+    // 确保只在客户端执行
+    if (typeof window !== 'undefined') {
+      setFadeIn(true);
       
-      const data = await response.json();
+      // 获取排名数据
+      fetchRankingData();
       
-      if (data.success) {
-        setRankingData({
-          percentile: data.percentile,
-          rank: data.rank,
-          totalCount: data.totalCount,
-          // 修改阈值，使少量样本时也显示排名
-          showRanking: data.totalCount >= 1,
-          isLoading: false,
-          error: null
-        });
-      } else {
-        setRankingData({
-          percentile: null,
-          rank: null,
-          totalCount: 0,
-          showRanking: false,
-          isLoading: false,
-          error: data.error || '获取排名数据失败'
-        });
+      // 检查会话存储，看是否已提交过当前值
+      const storageKey = `submitted_${props.value}_${props.countryCode}`;
+      const hasSubmittedBefore = sessionStorage.getItem(storageKey) === 'true';
+      
+      // 如果未提交过，才提交评估数据
+      if (!hasSubmittedBefore && !hasSubmitted) {
+        submitEvaluationData();
+        setHasSubmitted(true);
+        // 标记为已提交
+        try {
+          sessionStorage.setItem(storageKey, 'true');
+        } catch (e) {
+          console.warn('无法访问会话存储', e);
+        }
       }
-    } catch (error) {
-      console.error('获取排名数据失败:', error);
-      setRankingData({
-        percentile: null,
-        rank: null,
-        totalCount: 0,
-        showRanking: false,
-        isLoading: false,
-        error: '网络请求失败，无法获取排名数据'
-      });
     }
-  };
+  }, [props.value, props.countryCode, hasSubmitted, submitEvaluationData, fetchRankingData]);
 
   // 生成个性化评价
   const personalizedComments = (() => {
@@ -1080,20 +1080,24 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
               <div className="bg-gray-50 py-4 px-6 border-t border-gray-200">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center">
-                    <img 
+                    <Image 
                       src="/title.png" 
                       alt="Job Worth Calculator" 
                       className="h-20 mr-3"
+                      width={80}
+                      height={80}
                     />
                     <div className="flex flex-col">
                       <div className="text-sm font-medium text-gray-700">{t('share_custom_made')}</div>
                       <div className="text-sm text-gray-500">worthjob.zippland.com</div>
                     </div>
                   </div>
-                  <img 
+                  <Image 
                     src="/website.png" 
                     alt=""
-                    className="h-16 w-16 opacity-85" 
+                    className="h-16 w-16 opacity-85"
+                    width={64}
+                    height={64}
                   />
                 </div>
               </div>

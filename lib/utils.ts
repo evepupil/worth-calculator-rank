@@ -122,7 +122,7 @@ export function getClientInfo(): {
  * @param delay 延迟时间（毫秒）
  * @returns 防抖后的函数
  */
-export function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): (...args: Parameters<T>) => void {
+export function debounce<T extends (...args: unknown[]) => unknown>(fn: T, delay: number): (...args: Parameters<T>) => void {
   let timer: NodeJS.Timeout | null = null;
   
   return function(...args: Parameters<T>): void {
@@ -139,7 +139,7 @@ export function debounce<T extends (...args: any[]) => any>(fn: T, delay: number
  * @param limit 时间限制（毫秒）
  * @returns 节流后的函数
  */
-export function throttle<T extends (...args: any[]) => any>(fn: T, limit: number): (...args: Parameters<T>) => void {
+export function throttle<T extends (...args: unknown[]) => unknown>(fn: T, limit: number): (...args: Parameters<T>) => void {
   let inThrottle = false;
   
   return function(...args: Parameters<T>): void {

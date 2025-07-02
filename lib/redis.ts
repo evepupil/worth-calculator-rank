@@ -2,10 +2,8 @@ import { createClient } from 'redis';
 
 // 环境变量类型定义
 declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      REDIS_URL: string;
-    }
+  interface ProcessEnv extends NodeJS.ProcessEnv {
+    REDIS_URL: string;
   }
 }
 

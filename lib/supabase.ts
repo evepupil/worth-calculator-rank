@@ -2,11 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 
 // 环境变量类型定义
 declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      NEXT_PUBLIC_SUPABASE_URL: string;
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
-    }
+  interface ProcessEnv extends NodeJS.ProcessEnv {
+    NEXT_PUBLIC_SUPABASE_URL: string;
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
   }
 }
 

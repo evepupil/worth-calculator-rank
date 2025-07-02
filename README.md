@@ -3,6 +3,8 @@
 <img src="title.png" alt="Job Worth Calculator" width="500" />
 <br><br>
 
+> 本项目基于 [zippland/worth-calculator](https://github.com/zippland/worth-calculator)
+
 <a href="https://trendshift.io/repositories/13145" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13145" alt="Zippland%2Fworth-calculator | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
 <p>
@@ -145,6 +147,8 @@ REDIS_URL=redis://username:password@host:port
 
 <p align="center"><i>全面考量，计算薪资之外的工作真实价值</i></p>
 
+> 本项目基于 [zippland/worth-calculator](https://github.com/zippland/worth-calculator) 开源项目
+
 ### ✨ 特点
 
 - **💰 全面评估**: 基于薪资、工作时间、通勤时间、工作环境等多方面因素计算工作价值
@@ -253,6 +257,8 @@ REDIS_URL=redis://username:password@host:port
 <h2 align="center">📊 仕事の価値計算機</h2>
 
 <p align="center"><i>給料だけでなく、仕事の本当の価値を計算する</i></p>
+
+> このプロジェクトは [zippland/worth-calculator](https://github.com/zippland/worth-calculator) をベースにしています
 
 ### ✨ 特徴
 
