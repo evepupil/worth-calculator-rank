@@ -4,21 +4,25 @@ import { Redis } from '@upstash/redis';
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      UPSTASH_REDIS_REST_URL: string;
-      UPSTASH_REDIS_REST_TOKEN: string;
+      REDIS_URL: string;
     }
   }
 }
 
 // 确保环境变量存在
-if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-  throw new Error('缺少Redis环境变量');
+if (!process.env.REDIS_URL) {
+  throw new Error('缺少Redis环境变量 REDIS_URL');
 }
+
+// 从REDIS_URL中解析连接信息
+const url = new URL(process.env.REDIS_URL);
+// 从URL中获取密码部分作为token
+const token = url.password || '';
 
 // 创建Redis客户端
 export const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  url: process.env.REDIS_URL,
+  token: token, // 从URL中提取的token
 });
 
 // Redis键名常量
@@ -79,7 +83,11 @@ export async function getVisitStats(): Promise<{
     const dailyData = await redis.hmget(KEYS.DAILY_VISITS, ...dates);
     
     dates.forEach((date, index) => {
-      dailyVisits[date] = Number(dailyData[index] || 0);
+      // 确保dailyData存在且有对应的索引值
+      const value = dailyData && Array.isArray(dailyData) && index < dailyData.length 
+        ? dailyData[index] 
+        : null;
+      dailyVisits[date] = Number(value || 0);
     });
     
     return {
