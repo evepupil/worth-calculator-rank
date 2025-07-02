@@ -33,27 +33,118 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 // SQL文件路径
 const sqlFilePath = path.join(__dirname, 'init-db.sql');
 
+/**
+ * 执行SQL查询
+ * @param {string} query SQL查询
+ * @returns {Promise<void>}
+ */
+async function executeQuery(query) {
+  // 使用标准的supabase.rpc方式执行SQL查询
+  const { data, error } = await supabase.rpc('postgresql_query', { q: query });
+  
+  if (error) {
+    // 如果postgresql_query不可用，则提示使用手动方法
+    if (error.message && error.message.includes('function postgresql_query() does not exist')) {
+      console.warn('警告: Supabase服务器不支持直接执行SQL查询。');
+      throw new Error('不支持的操作，请使用手动方法。');
+    }
+    throw new Error(`执行SQL时出错: ${error.message}`);
+  }
+  
+  return data;
+}
+
+/**
+ * 分割SQL脚本为单独的语句
+ * @param {string} sql SQL脚本
+ * @returns {string[]} SQL语句数组
+ */
+function splitSqlStatements(sql) {
+  // 简单地按分号分割语句，但忽略注释中的分号和字符串中的分号
+  const statements = [];
+  let currentStatement = '';
+  let inComment = false;
+  let inString = false;
+  let stringChar = '';
+  
+  for (let i = 0; i < sql.length; i++) {
+    const char = sql[i];
+    const nextChar = sql[i + 1] || '';
+    
+    // 处理注释
+    if (char === '-' && nextChar === '-' && !inString) {
+      inComment = true;
+      currentStatement += char;
+      continue;
+    }
+    
+    // 处理换行（结束单行注释）
+    if ((char === '\n' || char === '\r') && inComment) {
+      inComment = false;
+      currentStatement += char;
+      continue;
+    }
+    
+    // 处理字符串
+    if ((char === "'" || char === '"') && !inComment) {
+      if (!inString) {
+        inString = true;
+        stringChar = char;
+      } else if (char === stringChar) {
+        inString = false;
+      }
+      currentStatement += char;
+      continue;
+    }
+    
+    // 处理语句结束
+    if (char === ';' && !inComment && !inString) {
+      currentStatement += char;
+      statements.push(currentStatement.trim());
+      currentStatement = '';
+      continue;
+    }
+    
+    // 添加普通字符
+    currentStatement += char;
+  }
+  
+  // 添加最后一个语句（如果存在且不为空）
+  if (currentStatement.trim()) {
+    statements.push(currentStatement.trim());
+  }
+  
+  return statements.filter(stmt => stmt.trim());
+}
+
 async function initDatabase() {
   try {
     console.log('正在读取SQL初始化文件...');
-    const sqlCommands = fs.readFileSync(sqlFilePath, 'utf8');
+    const sqlScript = fs.readFileSync(sqlFilePath, 'utf8');
     
     console.log('正在连接到Supabase...');
     
-    // 执行SQL命令
-    console.log('正在执行SQL初始化命令...');
-    const { error } = await supabase.rpc('pgmoon.run_sql', { query_text: sqlCommands });
+    // 分割SQL脚本为单独的语句
+    const sqlStatements = splitSqlStatements(sqlScript);
     
-    if (error) {
-      if (error.message.includes('function pgmoon.run_sql() does not exist')) {
-        console.error('错误: pgmoon扩展可能未启用。');
-        console.error('解决方案: 请使用Supabase仪表板中的SQL编辑器手动执行SQL文件内容。');
-        console.log('SQL文件内容:\n');
-        console.log(sqlCommands);
-      } else {
-        console.error('初始化数据库时出错:', error.message);
+    console.log(`找到 ${sqlStatements.length} 条SQL语句需要执行...`);
+    
+    // 逐一执行SQL语句
+    for (let i = 0; i < sqlStatements.length; i++) {
+      const statement = sqlStatements[i];
+      console.log(`正在执行第 ${i + 1}/${sqlStatements.length} 条SQL语句...`);
+      
+      try {
+        await executeQuery(statement);
+        console.log(`- 执行成功`);
+      } catch (err) {
+        // 如果表已存在等原因导致错误，但不影响主体功能，我们可以继续执行
+        if (err.message.includes('already exists')) {
+          console.warn(`- 警告: ${err.message}`);
+        } else {
+          throw err;
+        }
       }
-      process.exit(1);
     }
     
     console.log('数据库初始化成功!');
@@ -61,8 +152,9 @@ async function initDatabase() {
     console.log('已创建函数: get_average_job_worth_score');
     
   } catch (err) {
-    console.error('执行初始化脚本时发生错误:', err);
-    console.error('请使用Supabase仪表板中的SQL编辑器手动执行SQL文件内容。');
+    console.error('执行初始化脚本时发生错误:', err.message);
+    console.error('如果您无法解决此问题，请尝试使用手动方法:');
+    console.error('运行 `npm run init:db:manual` 并按照提示操作');
     process.exit(1);
   }
 }
