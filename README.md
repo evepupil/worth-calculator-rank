@@ -78,6 +78,58 @@ Please make sure to test your changes before submitting a PR.
 
 [MIT License](LICENSE)
 
+## 数据存储与统计
+
+本项目使用Supabase和Redis进行数据存储和统计：
+
+### Supabase配置
+
+1. 创建Supabase账户并新建项目
+2. 创建以下数据表：
+
+```sql
+-- 工作价值评估表
+CREATE TABLE job_worth_evaluations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  input_data JSONB NOT NULL,
+  result_score NUMERIC NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  client_info JSONB
+);
+
+-- 创建平均分计算函数
+CREATE OR REPLACE FUNCTION get_average_job_worth_score()
+RETURNS NUMERIC AS $$
+BEGIN
+  RETURN (SELECT AVG(result_score) FROM job_worth_evaluations);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+3. 在项目根目录创建`.env.local`文件，添加Supabase配置：
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### Redis配置
+
+1. 创建Upstash Redis数据库
+2. 在项目根目录的`.env.local`文件中添加Redis配置：
+
+```
+UPSTASH_REDIS_REST_URL=your_redis_rest_url
+UPSTASH_REDIS_REST_TOKEN=your_redis_rest_token
+```
+
+### 数据统计功能
+
+- 访问量统计：记录总访问量和每日访问量
+- 访客量统计：记录唯一访客数
+- 分数分布统计：记录用户评估分数的分布
+- 排名计算：根据历史数据计算用户评估结果的排名
+
 </div>
 
 ---
@@ -130,6 +182,58 @@ Please make sure to test your changes before submitting a PR.
 
 [MIT 许可证](LICENSE)
 
+## 数据存储与统计
+
+本项目使用Supabase和Redis进行数据存储和统计：
+
+### Supabase配置
+
+1. 创建Supabase账户并新建项目
+2. 创建以下数据表：
+
+```sql
+-- 工作价值评估表
+CREATE TABLE job_worth_evaluations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  input_data JSONB NOT NULL,
+  result_score NUMERIC NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  client_info JSONB
+);
+
+-- 创建平均分计算函数
+CREATE OR REPLACE FUNCTION get_average_job_worth_score()
+RETURNS NUMERIC AS $$
+BEGIN
+  RETURN (SELECT AVG(result_score) FROM job_worth_evaluations);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+3. 在项目根目录创建`.env.local`文件，添加Supabase配置：
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### Redis配置
+
+1. 创建Upstash Redis数据库
+2. 在项目根目录的`.env.local`文件中添加Redis配置：
+
+```
+UPSTASH_REDIS_REST_URL=your_redis_rest_url
+UPSTASH_REDIS_REST_TOKEN=your_redis_rest_token
+```
+
+### 数据统计功能
+
+- 访问量统计：记录总访问量和每日访问量
+- 访客量统计：记录唯一访客数
+- 分数分布统计：记录用户评估分数的分布
+- 排名计算：根据历史数据计算用户评估结果的排名
+
 </div>
 
 ---
@@ -181,5 +285,57 @@ PRを提出する前に変更をテストしてください。
 ### 📝 ライセンス
 
 [MITライセンス](LICENSE)
+
+## 数据存储与统计
+
+本项目使用Supabase和Redis进行数据存储和统计：
+
+### Supabase配置
+
+1. 创建Supabase账户并新建项目
+2. 创建以下数据表：
+
+```sql
+-- 工作价值评估表
+CREATE TABLE job_worth_evaluations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  input_data JSONB NOT NULL,
+  result_score NUMERIC NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  client_info JSONB
+);
+
+-- 创建平均分计算函数
+CREATE OR REPLACE FUNCTION get_average_job_worth_score()
+RETURNS NUMERIC AS $$
+BEGIN
+  RETURN (SELECT AVG(result_score) FROM job_worth_evaluations);
+END;
+$$ LANGUAGE plpgsql;
+```
+
+3. 在项目根目录创建`.env.local`文件，添加Supabase配置：
+
+```
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### Redis配置
+
+1. 创建Upstash Redis数据库
+2. 在项目根目录的`.env.local`文件中添加Redis配置：
+
+```
+UPSTASH_REDIS_REST_URL=your_redis_rest_url
+UPSTASH_REDIS_REST_TOKEN=your_redis_rest_token
+```
+
+### 数据统计功能
+
+- 访问量统计：记录总访问量和每日访问量
+- 访客量统计：记录唯一访客数
+- 分数分布统计：记录用户评估分数的分布
+- 排名计算：根据历史数据计算用户评估结果的排名
 
 </div>

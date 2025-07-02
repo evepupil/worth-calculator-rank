@@ -1,0 +1,224 @@
+import { createClient } from '@supabase/supabase-js';
+
+// 环境变量类型定义
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      NEXT_PUBLIC_SUPABASE_URL: string;
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
+    }
+  }
+}
+
+// 确保环境变量存在
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  throw new Error('缺少Supabase环境变量');
+}
+
+// 创建Supabase客户端
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+// 表单数据接口
+export interface JobWorthFormData {
+  salary: string;
+  workDaysPerWeek: string;
+  wfhDaysPerWeek: string;
+  annualLeave: string;
+  paidSickLeave: string;
+  publicHolidays: string;
+  workHours: string;
+  commuteHours: string;
+  restTime: string;
+  cityFactor: string;
+  workEnvironment: string;
+  leadership: string;
+  teamwork: string;
+  homeTown: string;
+  degreeType: string;
+  schoolType: string;
+  bachelorType: string;
+  workYears: string;
+  shuttle: string;
+  canteen: string;
+  jobStability: string;
+  education: string;
+  hasShuttle: boolean;
+  hasCanteen: boolean;
+  countryCode?: string;
+}
+
+// 评估结果接口
+export interface JobWorthResult {
+  id: string;
+  input_data: JobWorthFormData;
+  result_score: number;
+  created_at: string;
+  client_info?: {
+    ip?: string;
+    country?: string;
+    city?: string;
+    user_agent?: string;
+  };
+}
+
+/**
+ * 保存工作价值评估结果
+ * @param data 评估数据
+ * @returns 保存的结果
+ */
+export async function saveJobWorthResult(data: {
+  input_data: JobWorthFormData;
+  result_score: number;
+  created_at: string;
+  client_info?: {
+    ip?: string;
+    country?: string;
+    city?: string;
+    user_agent?: string;
+  };
+}): Promise<{ id: string }> {
+  try {
+    const { data: result, error } = await supabase
+      .from('job_worth_evaluations')
+      .insert([data])
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('保存评估结果失败:', error);
+      throw error;
+    }
+
+    return { id: result.id };
+  } catch (error) {
+    console.error('保存评估结果失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取工作价值评估结果
+ * @param id 评估结果ID
+ * @returns 评估结果
+ */
+export async function getJobWorthResult(id: string): Promise<JobWorthResult | null> {
+  try {
+    const { data, error } = await supabase
+      .from('job_worth_evaluations')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('获取评估结果失败:', error);
+      return null;
+    }
+
+    return data as JobWorthResult;
+  } catch (error) {
+    console.error('获取评估结果失败:', error);
+    return null;
+  }
+}
+
+/**
+ * 获取最近的评估结果列表
+ * @param limit 限制数量
+ * @returns 评估结果列表
+ */
+export async function getRecentJobWorthResults(limit: number = 10): Promise<JobWorthResult[]> {
+  try {
+    const { data, error } = await supabase
+      .from('job_worth_evaluations')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('获取最近评估结果失败:', error);
+      return [];
+    }
+
+    return data as JobWorthResult[];
+  } catch (error) {
+    console.error('获取最近评估结果失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 获取评估结果统计数据
+ * @returns 统计数据
+ */
+export async function getJobWorthStats(): Promise<{
+  total: number;
+  avgScore: number;
+  countByScoreRange: { range: string; count: number }[];
+}> {
+  try {
+    // 获取总数
+    const { count: total, error: countError } = await supabase
+      .from('job_worth_evaluations')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error('获取评估总数失败:', countError);
+      throw countError;
+    }
+
+    // 获取平均分
+    const { data: avgData, error: avgError } = await supabase
+      .rpc('get_average_job_worth_score');
+
+    if (avgError) {
+      console.error('获取平均分失败:', avgError);
+      throw avgError;
+    }
+
+    const avgScore = avgData || 0;
+
+    // 获取分数段分布
+    const scoreRanges = [
+      { min: 0, max: 0.6, label: '0-0.6' },
+      { min: 0.6, max: 1.0, label: '0.6-1.0' },
+      { min: 1.0, max: 1.8, label: '1.0-1.8' },
+      { min: 1.8, max: 2.5, label: '1.8-2.5' },
+      { min: 2.5, max: 3.2, label: '2.5-3.2' },
+      { min: 3.2, max: 4.0, label: '3.2-4.0' },
+      { min: 4.0, max: 100, label: '4.0+' }
+    ];
+
+    const countByScoreRange = await Promise.all(
+      scoreRanges.map(async ({ min, max, label }) => {
+        const { count, error } = await supabase
+          .from('job_worth_evaluations')
+          .select('*', { count: 'exact', head: true })
+          .gte('result_score', min)
+          .lt('result_score', max);
+
+        if (error) {
+          console.error(`获取分数段 ${label} 数量失败:`, error);
+          return { range: label, count: 0 };
+        }
+
+        return { range: label, count: count || 0 };
+      })
+    );
+
+    return {
+      total: total || 0,
+      avgScore,
+      countByScoreRange
+    };
+  } catch (error) {
+    console.error('获取评估统计数据失败:', error);
+    return {
+      total: 0,
+      avgScore: 0,
+      countByScoreRange: []
+    };
+  }
+} 
