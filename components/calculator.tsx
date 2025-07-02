@@ -614,7 +614,8 @@ const SalaryCalculator = () => {
     // 如果选择了非中国地区，使用选定国家的PPP；否则使用中国默认值4.19
     const isNonChina = selectedCountry !== 'CN';
     const pppFactor = isNonChina ? pppFactors[selectedCountry] || 4.19 : 4.19;
-    const standardizedSalary = Number(formData.salary) * (4.19 / pppFactor);
+    // 将输入的万元值乘以10000转换为实际薪资
+    const standardizedSalary = Number(formData.salary) * 10000 * (4.19 / pppFactor);
     
     return standardizedSalary / workingDays; // 除 0 不管, Infinity(爽到爆炸)!
   }, [formData.salary, selectedCountry, calculateWorkingDays]);
@@ -885,7 +886,7 @@ const SalaryCalculator = () => {
       value: value.toFixed(2),
       assessment: getValueAssessmentKey(), // 使用翻译键而不是已翻译的文本
       assessmentColor: getValueAssessment().color,
-      salary: formData.salary,
+      salary: formData.salary, // 这里保存的是k为单位的值
       countryCode: selectedCountry,
       countryName: getCountryName(selectedCountry),
       
@@ -997,15 +998,7 @@ const SalaryCalculator = () => {
             <Github className="h-3.5 w-3.5" />
             {t('github')}
           </a>
-          <a
-            href="https://www.xiaohongshu.com/user/profile/623e8b080000000010007721?xsec_token=YBzoLUB4HsSITTBOgPAXY-0Gvqvn3HqHpcDeA3sHhDh-M%3D&xsec_source=app_share&xhsshare=CopyLink&appuid=5c5d5259000000001d00ef04&apptime=1743400694&share_id=b9bfcd5090f9473daf5c1d1dc3eb0921&share_channel=copy_link"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-gray-500 hover:text-pink-500 dark:text-gray-400 dark:hover:text-pink-400 transition-colors flex items-center gap-1"
-          >
-            <Book className="h-3.5 w-3.5" />
-            {t('xiaohongshu')}
-          </a>
+          {/* 小红书链接已移除 */}
           {/* 仅在客户端渲染历史记录按钮 */}
           {isBrowser && (
             <button
@@ -1212,7 +1205,7 @@ const SalaryCalculator = () => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {selectedCountry !== 'CN' ? 
                   `${t('annual_salary')}(${getCurrencySymbol(selectedCountry)})` : 
-                  t('annual_salary_cny')}
+                  t('annual_salary_cny') + ''}
               </label>
               <div className="flex items-center gap-2 mt-1">
                 <Wallet className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -1221,14 +1214,15 @@ const SalaryCalculator = () => {
                   value={formData.salary}
                   onChange={(e) => handleInputChange('salary', e.target.value)}
                   placeholder={selectedCountry !== 'CN' ? 
-                    `${t('salary_placeholder')} ${getCurrencySymbol(selectedCountry)}` : 
-                    t('salary_placeholder_cny')}
+                    `${t('salary_placeholder')} ${getCurrencySymbol(selectedCountry)}/万` : 
+                    t('salary_placeholder_cny') + '/万'}
                   className="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white"
                 />
               </div>
             </div>
 
-            <div className="relative">
+            {/* 隐藏国家选择，但保留功能 */}
+            <div className="hidden">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('country_selection')}
                 <span className="ml-1 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-300 cursor-pointer group relative">

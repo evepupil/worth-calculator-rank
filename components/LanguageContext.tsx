@@ -572,10 +572,9 @@ export const countryNames: Record<Language, Record<string, string>> = {
 const translations: Record<Language, Record<string, string>> = {
   zh: {
     // 标题和导航
-    'title': '这b班上得值不值·测算版',
+    'title': '这B班上得值不值-统计版',
     'github': 'GitHub',
     'email': 'Email',
-    'xiaohongshu': '小红书',
     'redirect_notice': '已自动跳转，新网址无需科学上网',
     'visits': '访问量',
     'visitors': '访客数',
@@ -588,7 +587,7 @@ const translations: Record<Language, Record<string, string>> = {
     'restore_history': '恢复此记录',
     
     // 表单标签
-    'annual_salary_cny': '年薪总包（元）',
+    'annual_salary_cny': '年薪总包（万元）',
     'annual_salary_foreign': '年薪总包（当地货币）',
     'annual_salary': '年薪总包',
     'salary_placeholder_cny': '税前年薪',
@@ -603,7 +602,7 @@ const translations: Record<Language, Record<string, string>> = {
     'country_selection': '工作国家/地区',
     'selected_ppp': '当前PPP值',
     'work_days_per_week': '每周工作天数/d',
-    'wfh_days_per_week': '周WFH天数/d',
+    'wfh_days_per_week': '每周居家办公天数/d',
     'wfh_tooltip': 'WFH指居家办公(Work From Home)，这里填写的是前面工作天数中有多少天是在家办公的。',
     'annual_leave': '年假天数/d',
     'public_holidays': '法定假日/d',
@@ -694,7 +693,7 @@ const translations: Record<Language, Record<string, string>> = {
     'share_back_to_calculator': '返回计算器',
     'share_your_job_worth_report': '你的工作性价比报告',
     'share_job_worth_report': '工作性价比报告',
-    'share_custom_made': '由"这b班上得值不值·测算版"精心定制',
+    'share_custom_made': '由"这B班上得值不值·统计版"精心定制',
     'share_generating': '生成中...',
     'share_download_report': '下载报告',
     'share_basic_info': '基础信息',
@@ -813,7 +812,6 @@ const translations: Record<Language, Record<string, string>> = {
     'title': 'Is My Job Worth the Grind?',
     'github': 'GitHub',
     'email': 'Email',
-    'xiaohongshu': 'Rednote',
     'redirect_notice': 'Automatically redirected, no VPN needed',
     'visits': 'Visits',
     'visitors': 'Visitors',
@@ -1051,7 +1049,6 @@ const translations: Record<Language, Record<string, string>> = {
     'title': 'この仕事、正気でやれる？ブラック度診断',
     'github': 'GitHub',
     'email': 'Email',
-    'xiaohongshu': '小紅書(RED)',
     'redirect_notice': '自動的にリダイレクトされました',
     'visits': 'アクセス数',
     'visitors': '訪問者数',
