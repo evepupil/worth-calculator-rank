@@ -1784,52 +1784,60 @@ const SalaryCalculator = () => {
         
         {/* 修改分享按钮为链接到分享页面，并保存到历史 */}
         <div className="mt-6 flex justify-end">
-          <Link
-            href={{
-              pathname: '/share',
-              query: {
-                value: value.toFixed(2),
-                assessment: getValueAssessmentKey(),
-                assessmentColor: getValueAssessment().color,
-                cityFactor: formData.cityFactor,
-                workHours: formData.workHours,
-                commuteHours: formData.commuteHours,
-                restTime: formData.restTime,
-                dailySalary: getDisplaySalary(),
-                isYuan: selectedCountry !== 'CN' ? 'false' : 'true',
-                workDaysPerYear: calculateWorkingDays().toString(),
-                workDaysPerWeek: formData.workDaysPerWeek,
-                wfhDaysPerWeek: formData.wfhDaysPerWeek,
-                annualLeave: formData.annualLeave,
-                paidSickLeave: formData.paidSickLeave,
-                publicHolidays: formData.publicHolidays,
-                workEnvironment: formData.workEnvironment,
-                leadership: formData.leadership,
-                teamwork: formData.teamwork,
-                degreeType: formData.degreeType,
-                schoolType: formData.schoolType,
-                education: formData.education,
-                homeTown: formData.homeTown,
-                shuttle: formData.hasShuttle ? formData.shuttle : '1.0',
-                canteen: formData.hasCanteen ? formData.canteen : '1.0',
-                workYears: formData.workYears,
-                jobStability: formData.jobStability,
-                bachelorType: formData.bachelorType,
-                countryCode: selectedCountry,
-                countryName: getCountryName(selectedCountry),
-                currencySymbol: getCurrencySymbol(selectedCountry),
-                hasShuttle: formData.hasShuttle,
-                hasCanteen: formData.hasCanteen,
-              }
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors
-              ${formData.salary ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800' : 
-              'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'}`}
-            onClick={() => formData.salary ? saveToHistory() : null}
-          >
-            <FileText className="w-4 h-4" />
-            {t('view_report')}
-          </Link>
+          {formData.salary ? (
+            <Link
+              href={{
+                pathname: '/share',
+                query: {
+                  value: value.toFixed(2),
+                  assessment: getValueAssessmentKey(),
+                  assessmentColor: getValueAssessment().color,
+                  cityFactor: formData.cityFactor,
+                  workHours: formData.workHours,
+                  commuteHours: formData.commuteHours,
+                  restTime: formData.restTime,
+                  dailySalary: getDisplaySalary(),
+                  isYuan: selectedCountry !== 'CN' ? 'false' : 'true',
+                  workDaysPerYear: calculateWorkingDays().toString(),
+                  workDaysPerWeek: formData.workDaysPerWeek,
+                  wfhDaysPerWeek: formData.wfhDaysPerWeek,
+                  annualLeave: formData.annualLeave,
+                  paidSickLeave: formData.paidSickLeave,
+                  publicHolidays: formData.publicHolidays,
+                  workEnvironment: formData.workEnvironment,
+                  leadership: formData.leadership,
+                  teamwork: formData.teamwork,
+                  degreeType: formData.degreeType,
+                  schoolType: formData.schoolType,
+                  education: formData.education,
+                  homeTown: formData.homeTown,
+                  shuttle: formData.hasShuttle ? formData.shuttle : '1.0',
+                  canteen: formData.hasCanteen ? formData.canteen : '1.0',
+                  workYears: formData.workYears,
+                  jobStability: formData.jobStability,
+                  bachelorType: formData.bachelorType,
+                  countryCode: selectedCountry,
+                  countryName: getCountryName(selectedCountry),
+                  currencySymbol: getCurrencySymbol(selectedCountry),
+                  hasShuttle: formData.hasShuttle,
+                  hasCanteen: formData.hasCanteen,
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
+              onClick={() => saveToHistory()}
+            >
+              <FileText className="w-4 h-4" />
+              {t('view_report')}
+            </Link>
+          ) : (
+            <button
+              disabled
+              className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+            >
+              <FileText className="w-4 h-4" />
+              {t('view_report')}
+            </button>
+          )}
         </div>
       </div>
     </div>
