@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Download, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from './LanguageContext';
@@ -223,6 +223,26 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
   // 客户端渲染标志
   const [isClient, setIsClient] = useState(false);
   
+  // 标记是否已经提交数据，避免重复提交
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  
+  // 新增排名数据状态
+  const [rankingData, setRankingData] = useState<{
+    percentile: string | null;
+    rank: number | null;
+    totalCount: number;
+    showRanking: boolean;
+    isLoading: boolean;
+    error: string | null;
+  }>({
+    percentile: null,
+    rank: null,
+    totalCount: 0,
+    showRanking: false,
+    isLoading: true,
+    error: null
+  });
+  
   // 确保只在客户端执行
   useEffect(() => {
     setIsClient(true);
@@ -233,8 +253,133 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
     // 确保只在客户端执行
     if (typeof window !== 'undefined') {
       setFadeIn(true);
+      
+      // 获取排名数据
+      fetchRankingData();
+      
+      // 检查会话存储，看是否已提交过当前值
+      const storageKey = `submitted_${props.value}_${props.countryCode}`;
+      const hasSubmittedBefore = sessionStorage.getItem(storageKey) === 'true';
+      
+      // 如果未提交过，才提交评估数据
+      if (!hasSubmittedBefore && !hasSubmitted) {
+        submitEvaluationData();
+        setHasSubmitted(true);
+        // 标记为已提交
+        try {
+          sessionStorage.setItem(storageKey, 'true');
+        } catch (e) {
+          console.warn('无法访问会话存储', e);
+        }
+      }
     }
-  }, []);
+  }, [props.value, props.countryCode, hasSubmitted]);
+
+  // 提交评估数据到后端
+  const submitEvaluationData = async () => {
+    try {
+      // 准备提交的表单数据，从props中获取所有必要的值
+      const formData = {
+        salary: '', // 这里无法获取原始工资值，仅有dailySalary
+        cityFactor: props.cityFactor,
+        workHours: props.workHours,
+        commuteHours: props.commuteHours,
+        restTime: props.restTime,
+        workDaysPerWeek: props.workDaysPerWeek,
+        wfhDaysPerWeek: props.wfhDaysPerWeek,
+        annualLeave: props.annualLeave,
+        paidSickLeave: props.paidSickLeave,
+        publicHolidays: props.publicHolidays,
+        workEnvironment: props.workEnvironment,
+        leadership: props.leadership,
+        teamwork: props.teamwork,
+        degreeType: props.degreeType,
+        schoolType: props.schoolType,
+        homeTown: props.homeTown,
+        shuttle: props.shuttle,
+        canteen: props.canteen,
+        workYears: props.workYears,
+        jobStability: props.jobStability,
+        education: props.education,
+        bachelorType: props.bachelorType,
+        hasShuttle: props.hasShuttle,
+        hasCanteen: props.hasCanteen,
+        nonChinaSalary: props.isYuan !== 'true', // 根据isYuan推断
+      };
+      
+      console.log('准备提交分享页面数据...');
+      
+      // 提交数据到后端
+      const response = await fetch('/api/job-worth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          formData,
+          score: parseFloat(props.value)
+        }),
+      });
+      
+      if (response.ok) {
+        console.log('分享页面数据已成功提交到数据库');
+      } else {
+        console.error('提交分享页面数据失败:', await response.text());
+      }
+    } catch (error) {
+      // 静默处理错误，不影响用户体验
+      console.error('提交分享页面数据失败:', error);
+    }
+  };
+  
+  // 获取排名数据的函数
+  const fetchRankingData = async () => {
+    try {
+      // 使用当前分数向后端请求排名数据
+      const response = await fetch('/api/job-worth-rank', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          score: parseFloat(props.value)
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setRankingData({
+          percentile: data.percentile,
+          rank: data.rank,
+          totalCount: data.totalCount,
+          // 只有当样本数量达到1000或以上时才显示排名
+          showRanking: data.totalCount >= 1000,
+          isLoading: false,
+          error: null
+        });
+      } else {
+        setRankingData({
+          percentile: null,
+          rank: null,
+          totalCount: 0,
+          showRanking: false,
+          isLoading: false,
+          error: data.error || '获取排名数据失败'
+        });
+      }
+    } catch (error) {
+      console.error('获取排名数据失败:', error);
+      setRankingData({
+        percentile: null,
+        rank: null,
+        totalCount: 0,
+        showRanking: false,
+        isLoading: false,
+        error: '网络请求失败，无法获取排名数据'
+      });
+    }
+  };
 
   // 生成个性化评价
   const personalizedComments = (() => {
@@ -647,6 +792,46 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
             <span className="text-base md:text-lg text-gray-700">{isClient ? t(getAssessmentKey(props.assessment)) : ''}</span>
           </div>
         </div>
+
+        {/* 添加排名信息卡片 */}
+        {isClient && (
+          <div className="mb-5 md:mb-8">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-4 border border-blue-100 dark:border-blue-800">
+              <h2 className="text-base md:text-lg font-bold mb-2 flex items-center">
+                <Trophy className="w-4 h-4 md:w-5 md:h-5 mr-1.5 text-yellow-500" />
+                <span className="text-gray-800 dark:text-gray-200">{t('ranking_information')}</span>
+              </h2>
+              
+              {rankingData.isLoading ? (
+                <div className="flex items-center justify-center py-3">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">加载中...</span>
+                </div>
+              ) : rankingData.error ? (
+                <p className="text-sm text-red-500 dark:text-red-400 py-2">{rankingData.error}</p>
+              ) : rankingData.showRanking ? (
+                <div>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {t('your_score_is')} <span className="font-bold">{props.value}</span>，
+                    {t('beat_percentage')} <span className="text-red-500 dark:text-red-400 font-bold">{rankingData.percentile}%</span> {t('of_people')}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    （{t('based_on_samples')}：{rankingData.totalCount}）
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-gray-700 dark:text-gray-300">
+                    {t('insufficient_samples')}（{rankingData.totalCount || 0}）
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    {t('sample_explanation')}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
         {/* 性价比评语卡片 - 移动端更紧凑 */}
         <div className="space-y-4 md:space-y-6">

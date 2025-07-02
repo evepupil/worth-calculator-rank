@@ -393,6 +393,10 @@ const SalaryCalculator = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   
+  // 添加 ref 记录上次提交的值，避免重复提交
+  const lastSubmittedValueRef = useRef<number | null>(null);
+  const lastSubmittedTimestampRef = useRef<number>(0);
+  
   // 在组件挂载时标记为浏览器环境
   useEffect(() => {
     setIsBrowser(true);
@@ -653,6 +657,7 @@ const SalaryCalculator = () => {
     }, 0);
   }, []);
 
+  // 计算价值并保存结果
   const calculateValue = () => {
     if (!formData.salary) return 0;
     
@@ -745,11 +750,41 @@ const SalaryCalculator = () => {
     
     // 薪资满意度应该受到经验薪资倍数的影响
     // 相同薪资，对于高经验者来说价值更低，对应的计算公式需要考虑经验倍数
-    return (dailySalary * environmentFactor) / 
+    const calculatedValue = (dailySalary * environmentFactor) / 
            (35 * (workHours + effectiveCommuteHours - 0.5 * restTime) * Number(formData.education) * experienceSalaryMultiplier);
+    
+    // 移除此处的提交逻辑，改为在下方的useEffect中处理
+    
+    return calculatedValue;
   };
 
   const value = calculateValue();
+  
+  // 添加useEffect处理提交逻辑，仅当value有意义且发生变化时才提交
+  useEffect(() => {
+    // 条件检查：值有效、有薪资输入、是浏览器环境、值与上次不同且距离上次提交超过1秒
+    const now = Date.now();
+    const shouldSubmit = 
+      value > 0 && 
+      formData.salary && 
+      isBrowser && 
+      (lastSubmittedValueRef.current !== value || 
+      now - lastSubmittedTimestampRef.current > 1000);
+    
+    if (shouldSubmit) {
+      // 更新提交记录
+      lastSubmittedValueRef.current = value;
+      lastSubmittedTimestampRef.current = now;
+      
+      // 延迟执行，避免组件初始渲染时就提交
+      const timer = setTimeout(() => {
+        submitScoreToBackend(value);
+        submitFullEvaluationData(formData, value);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [value, formData, isBrowser]);
   
   const getValueAssessment = useCallback(() => {
     if (!formData.salary) return { text: t('rating_enter_salary'), color: "text-gray-500" };
@@ -970,7 +1005,47 @@ const SalaryCalculator = () => {
     return currencySymbols[countryCode] || '$'; // 如果没有找到对应货币符号，默认使用美元符号
   }, []);
 
-  return (
+  // 提交评分到后端
+  const submitScoreToBackend = async (score: number) => {
+    try {
+      await fetch('/api/job-worth-rank', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ score }),
+      });
+      
+      // 不需要处理响应，这只是一个统计更新
+      console.log('评分已提交到统计系统');
+    } catch (error) {
+      // 静默处理错误，不影响用户体验
+      console.error('提交评分失败:', error);
+    }
+  };
+
+  // 提交完整评估数据到后端
+  const submitFullEvaluationData = async (formData: FormData, score: number) => {
+    try {
+      await fetch('/api/job-worth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          formData,
+          score
+        }),
+      });
+      
+      console.log('完整评估数据已提交到数据库');
+    } catch (error) {
+      // 静默处理错误，不影响用户体验
+      console.error('提交完整评估数据失败:', error);
+    }
+  };
+
+   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6">
       <div className="mb-4 text-center">
         <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 py-2">{t('title')}</h1>
