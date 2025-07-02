@@ -353,8 +353,8 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
           percentile: data.percentile,
           rank: data.rank,
           totalCount: data.totalCount,
-          // 只有当样本数量达到1000或以上时才显示排名
-          showRanking: data.totalCount >= 10,
+          // 修改阈值，使少量样本时也显示排名
+          showRanking: data.totalCount >= 1,
           isLoading: false,
           error: null
         });
@@ -840,8 +840,8 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
                             <span className="font-medium text-gray-800">{rankingData.totalCount}</span>
                           </div>
                           <div className="flex items-center text-xs">
-                            <span className="text-gray-500 mr-1">{t('your_rank')}:</span>
-                            <span className="font-medium text-gray-800">#{rankingData.rank}</span>
+                            <span className="text-gray-500 mr-1">{t('defeated_count')}:</span>
+                            <span className="font-medium text-gray-800">{rankingData.rank !== null ? rankingData.totalCount - rankingData.rank : '-'}</span>
                           </div>
                         </div>
                       </div>

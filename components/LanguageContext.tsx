@@ -814,13 +814,15 @@ const translations: Record<Language, Record<string, string>> = {
     'your_score': '您的工作价值得分',
     'ranking_information': '排名情况',
     'your_score_is': '您的工作价值评分为',
-    'beat_percentage': '击败了全国',
+    'beat_percentage': '超过了全国',
     'of_people': '的人',
     'based_on_samples': '基于样本数据',
     'insufficient_samples': '当前样本数量不足',
     'sample_explanation': '需要至少1000个样本才能提供更准确的排名数据',
     'improvement_suggestions': '改进建议',
     'share_result': '分享结果',
+    'your_rank': '您的排名',
+    'defeated_count': '超过人数',
   },
   en: {
     // Title and navigation
@@ -1059,6 +1061,13 @@ const translations: Record<Language, Record<string, string>> = {
     'rating_excellent': 'Excellent',
     'rating_perfect': 'Outstanding',
     'share_country': 'Work Country/Region',
+    'your_score_is': 'Your score is',
+    'beat_percentage': 'beating',
+    'of_people': 'of people',
+    'based_on_samples': 'Based on samples',
+    'your_rank': 'Your rank',
+    'defeated_count': 'People defeated',
+    'insufficient_samples': 'Insufficient sample size',
   },
   ja: {
     // タイトルとナビゲーション
@@ -1296,6 +1305,13 @@ const translations: Record<Language, Record<string, string>> = {
     'rating_excellent': '非常に優れている',
     'rating_perfect': '理想的',
     'share_country': '勤務国・地域',
+    'your_score_is': 'あなたのスコアは',
+    'beat_percentage': '上位',
+    'of_people': 'に入っています',
+    'based_on_samples': 'サンプル数',
+    'your_rank': 'あなたの順位',
+    'defeated_count': '上回った人数',
+    'insufficient_samples': 'サンプル数が不足しています',
   }
 };
 

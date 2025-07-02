@@ -1170,15 +1170,21 @@ const SalaryCalculator = () => {
         {/* 访问统计 - 仅在客户端渲染 */}
         {isBrowser && (
           <div className="mt-1 text-xs text-gray-400 dark:text-gray-500 flex justify-center gap-4">
-            <span id="busuanzi_container_site_pv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
-              {t('visits')}: <span id="busuanzi_value_site_pv">{statsData.totalVisits || '-'}</span>
-            </span>
-            <span id="busuanzi_container_site_uv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
-              {t('visitors')}: <span id="busuanzi_value_site_uv">{statsData.uniqueVisitors || '-'}</span>
-            </span>
-            <span className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
-              {t('sample_count')}: <span>{statsData.totalCount || '-'}</span>
-            </span>
+            {statsData.totalVisits !== null && (
+              <span id="busuanzi_container_site_pv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
+                {t('visits')}: <span id="busuanzi_value_site_pv">{statsData.totalVisits}</span>
+              </span>
+            )}
+            {statsData.uniqueVisitors !== null && (
+              <span id="busuanzi_container_site_uv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
+                {t('visitors')}: <span id="busuanzi_value_site_uv">{statsData.uniqueVisitors}</span>
+              </span>
+            )}
+            {statsData.totalCount !== null && (
+              <span className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
+                {t('sample_count')}: <span>{statsData.totalCount}</span>
+              </span>
+            )}
           </div>
         )}
         
