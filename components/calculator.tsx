@@ -470,6 +470,15 @@ const SalaryCalculator = () => {
   const [assessment, setAssessment] = useState("");
   const [assessmentColor, setAssessmentColor] = useState("text-gray-500");
   const [visitorVisible, setVisitorVisible] = useState(false);
+  const [statsData, setStatsData] = useState<{
+    totalCount: number | null;
+    totalVisits: number | null;
+    uniqueVisitors: number | null;
+  }>({
+    totalCount: null,
+    totalVisits: null,
+    uniqueVisitors: null,
+  });
 
   // 添加检查document对象存在的逻辑
   useEffect(() => {
@@ -1045,6 +1054,78 @@ const SalaryCalculator = () => {
     }
   };
 
+  // 获取统计数据
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        if (data.success) {
+          setStatsData({
+            totalCount: data.data.scoreDistribution?.totalCount || null,
+            totalVisits: data.data.visits?.totalVisits || null,
+            uniqueVisitors: data.data.visits?.uniqueVisitors || null,
+          });
+          // 数据加载完成后显示访问统计
+          setVisitorVisible(true);
+        }
+      } catch (error) {
+        console.error('获取统计数据失败:', error);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  // 记录访问
+  useEffect(() => {
+    if (isBrowser) {
+      const recordPageVisit = async () => {
+        try {
+          // 从localStorage获取访客ID
+          const storedVisitorId = localStorage.getItem('visitorId');
+          
+          // 调用记录访问的API
+          const response = await fetch('/api/visit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              visitorId: storedVisitorId || undefined
+            }),
+          });
+          
+          const data = await response.json();
+          if (data.success) {
+            // 将新的访客ID存储到localStorage
+            if (!storedVisitorId) {
+              localStorage.setItem('visitorId', data.visitorId);
+            }
+            
+            console.log('成功记录访问');
+          }
+        } catch (error) {
+          console.error('记录访问失败:', error);
+        }
+      };
+      
+      // 执行访问记录
+      recordPageVisit();
+    }
+  }, [isBrowser]);
+
+  // 确保不蔽思算子脚本加载完成后设置可见
+  useEffect(() => {
+    if (isBrowser) {
+      // 给足够时间让不蔽思算子脚本加载完成
+      const timer = setTimeout(() => {
+        setVisitorVisible(true);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isBrowser]);
+
    return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6">
       <div className="mb-4 text-center">
@@ -1085,6 +1166,27 @@ const SalaryCalculator = () => {
             </button>
           )}
         </div>
+        
+        {/* 访问统计 - 仅在客户端渲染 */}
+        {isBrowser && (
+          <div className="mt-1 text-xs text-gray-400 dark:text-gray-500 flex justify-center gap-4">
+            <span id="busuanzi_container_site_pv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
+              {t('visits')}: <span id="busuanzi_value_site_pv">{statsData.totalVisits || '-'}</span>
+            </span>
+            <span id="busuanzi_container_site_uv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
+              {t('visitors')}: <span id="busuanzi_value_site_uv">{statsData.uniqueVisitors || '-'}</span>
+            </span>
+            <span className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
+              {t('sample_count')}: <span>{statsData.totalCount || '-'}</span>
+            </span>
+          </div>
+        )}
+        
+        <div className="flex justify-center mb-2">
+          <LanguageSwitcher />
+        </div>
+        
+        {/* 移除原来底部的访问统计 */}
         
         {/* 历史记录列表 - 仅在客户端渲染 */}
         {isBrowser && showHistory && (
@@ -1252,22 +1354,6 @@ const SalaryCalculator = () => {
                 )}
               </div>
             </div>
-          </div>
-        )}
-        
-        <div className="flex justify-center mb-2">
-          <LanguageSwitcher />
-        </div>
-        
-        {/* 访问统计 - 仅在客户端渲染 */}
-        {isBrowser && (
-          <div className="mt-1 text-xs text-gray-400 dark:text-gray-600 flex justify-center gap-4">
-            <span id="busuanzi_container_site_pv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
-              {t('visits')}: <span id="busuanzi_value_site_pv"></span>
-            </span>
-            <span id="busuanzi_container_site_uv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
-              {t('visitors')}: <span id="busuanzi_value_site_uv"></span>
-            </span>
           </div>
         )}
       </div>

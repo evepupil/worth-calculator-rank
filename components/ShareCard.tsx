@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import { ArrowLeft, Download, Trophy } from 'lucide-react';
+import { ArrowLeft, Download, Trophy, Github } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLanguage } from './LanguageContext';
@@ -354,7 +354,7 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
           rank: data.rank,
           totalCount: data.totalCount,
           // 只有当样本数量达到1000或以上时才显示排名
-          showRanking: data.totalCount >= 1000,
+          showRanking: data.totalCount >= 10,
           isLoading: false,
           error: null
         });
@@ -777,6 +777,24 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
           <span>{t('share_back_to_calculator')}</span>
         </Link>
       </div>
+      
+      {/* 添加版本信息、访问量、访客量、样本数量 */}
+      {isClient && (
+        <div className="w-full max-w-4xl mb-4 bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-sm p-3 flex flex-wrap items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500 dark:text-gray-400">v6.2.1</span>
+            <a
+              href="https://github.com/zippland/worth-calculator"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
+            >
+              <Github className="h-3.5 w-3.5" />
+              GitHub
+            </a>
+          </div>
+        </div>
+      )}
       
       <div ref={reportRef} className="w-full max-w-4xl bg-white rounded-xl shadow-xl p-4 md:p-10">
         {/* 标题 - 移动端更紧凑 */}
