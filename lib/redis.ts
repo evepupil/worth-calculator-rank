@@ -1,4 +1,4 @@
-import { Redis } from '@upstash/redis';
+import { createClient } from 'redis';
 
 // 环境变量类型定义
 declare global {
@@ -14,16 +14,39 @@ if (!process.env.REDIS_URL) {
   throw new Error('缺少Redis环境变量 REDIS_URL');
 }
 
-// 从REDIS_URL中解析连接信息
-const url = new URL(process.env.REDIS_URL);
-// 从URL中获取密码部分作为token
-const token = url.password || '';
+// Redis客户端单例
+let redisClient: ReturnType<typeof createClient> | null = null;
+let connectionPromise: Promise<ReturnType<typeof createClient>> | null = null;
 
-// 创建Redis客户端
-export const redis = new Redis({
-  url: process.env.REDIS_URL,
-  token: token, // 从URL中提取的token
-});
+/**
+ * 获取Redis客户端实例
+ * 使用单例模式确保只创建一个连接
+ */
+export async function getRedisClient() {
+  if (!redisClient) {
+    if (!connectionPromise) {
+      connectionPromise = createClient({
+        url: process.env.REDIS_URL
+      })
+      .on('error', (err: Error) => {
+        console.error('Redis连接错误:', err);
+        redisClient = null;
+        connectionPromise = null;
+      })
+      .connect();
+    }
+    
+    try {
+      redisClient = await connectionPromise;
+    } catch (error) {
+      console.error('Redis连接失败:', error);
+      connectionPromise = null;
+      throw error;
+    }
+  }
+  
+  return redisClient;
+}
 
 // Redis键名常量
 const KEYS = {
@@ -40,6 +63,8 @@ const KEYS = {
  */
 export async function recordVisit(visitorId: string): Promise<void> {
   try {
+    const redis = await getRedisClient();
+    
     // 增加总访问量
     await redis.incr(KEYS.VISITS);
 
@@ -47,10 +72,10 @@ export async function recordVisit(visitorId: string): Promise<void> {
     const today = new Date().toISOString().split('T')[0];
     
     // 增加今天的访问量
-    await redis.hincrby(KEYS.DAILY_VISITS, today, 1);
+    await redis.hIncrBy(KEYS.DAILY_VISITS, today, 1);
     
     // 添加访客ID到集合中（自动去重）
-    await redis.sadd(KEYS.VISITORS, visitorId);
+    await redis.sAdd(KEYS.VISITORS, visitorId);
   } catch (error) {
     console.error('记录访问失败:', error);
   }
@@ -65,11 +90,13 @@ export async function getVisitStats(): Promise<{
   dailyVisits: Record<string, number>;
 }> {
   try {
+    const redis = await getRedisClient();
+    
     // 获取总访问量
-    const totalVisits = await redis.get<number>(KEYS.VISITS) || 0;
+    const totalVisits = parseInt(await redis.get(KEYS.VISITS) || '0', 10);
     
     // 获取唯一访客数
-    const uniqueVisitors = await redis.scard(KEYS.VISITORS) || 0;
+    const uniqueVisitors = await redis.sCard(KEYS.VISITORS) || 0;
     
     // 获取每日访问量（最近7天）
     const dates = [];
@@ -80,7 +107,7 @@ export async function getVisitStats(): Promise<{
     }
     
     const dailyVisits: Record<string, number> = {};
-    const dailyData = await redis.hmget(KEYS.DAILY_VISITS, ...dates);
+    const dailyData = await redis.hmGet(KEYS.DAILY_VISITS, dates);
     
     dates.forEach((date, index) => {
       // 确保dailyData存在且有对应的索引值
@@ -111,11 +138,13 @@ export async function getVisitStats(): Promise<{
  */
 export async function updateScoreDistribution(score: number): Promise<void> {
   try {
+    const redis = await getRedisClient();
+    
     // 将分数转换为字符串，保留两位小数
     const scoreStr = score.toFixed(2);
     
     // 增加该分数的计数
-    await redis.hincrby(KEYS.SCORE_DISTRIBUTION, scoreStr, 1);
+    await redis.hIncrBy(KEYS.SCORE_DISTRIBUTION, scoreStr, 1);
     
     // 增加总评估次数
     await redis.incr(KEYS.SCORE_COUNT);
@@ -136,10 +165,12 @@ export async function getScorePercentile(score: number): Promise<{
   error?: unknown;
 }> {
   try {
-    // 获取所有分数分布
-    const distribution = await redis.hgetall<Record<string, string>>(KEYS.SCORE_DISTRIBUTION);
+    const redis = await getRedisClient();
     
-    if (!distribution) {
+    // 获取所有分数分布
+    const distribution = await redis.hGetAll(KEYS.SCORE_DISTRIBUTION);
+    
+    if (!distribution || Object.keys(distribution).length === 0) {
       return {
         percentile: '0',
         totalCount: 0,
@@ -153,7 +184,7 @@ export async function getScorePercentile(score: number): Promise<{
     let lowerCount = 0;
     
     Object.entries(distribution).forEach(([scoreStr, countStr]) => {
-      const count = parseInt(countStr, 10);
+      const count = parseInt(countStr as string, 10);
       totalCount += count;
       
       if (parseFloat(scoreStr) < score) {
@@ -191,10 +222,12 @@ export async function getScoreDistributionStats(): Promise<{
   averageScore: number;
 }> {
   try {
-    // 获取所有分数分布
-    const distribution = await redis.hgetall<Record<string, string>>(KEYS.SCORE_DISTRIBUTION);
+    const redis = await getRedisClient();
     
-    if (!distribution) {
+    // 获取所有分数分布
+    const distribution = await redis.hGetAll(KEYS.SCORE_DISTRIBUTION);
+    
+    if (!distribution || Object.keys(distribution).length === 0) {
       return {
         distribution: [],
         totalCount: 0,
@@ -205,7 +238,7 @@ export async function getScoreDistributionStats(): Promise<{
     // 转换为数组并排序
     const scoreDistribution = Object.entries(distribution).map(([score, count]) => ({
       score,
-      count: parseInt(count, 10)
+      count: parseInt(count as string, 10)
     })).sort((a, b) => parseFloat(a.score) - parseFloat(b.score));
     
     // 计算总数和平均分
