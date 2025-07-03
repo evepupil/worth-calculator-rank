@@ -841,7 +841,7 @@ const ShareCard: React.FC<ShareCardProps> = (props) => {
                           </div>
                           <div className="flex items-center text-xs">
                             <span className="text-gray-500 mr-1">{t('defeated_count')}:</span>
-                            <span className="font-medium text-gray-800">{rankingData.rank !== null ? rankingData.totalCount - rankingData.rank : '-'}</span>
+                            <span className="font-medium text-gray-800">{rankingData.rank !== null ? rankingData.rank : '-'}</span>
                           </div>
                         </div>
                       </div>

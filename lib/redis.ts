@@ -277,8 +277,8 @@ export async function calculateRank(score: number): Promise<{
   try {
     const { percentile, totalCount, lowerCount } = await getScorePercentile(score);
     
-    // 计算排名（总数 - 低于当前分数的数量）
-    const rank = totalCount - lowerCount;
+    // 修正：rank直接表示超过的人数，即低于当前分数的人数
+    const rank = lowerCount;
     
     return {
       percentile,

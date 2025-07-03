@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveJobWorthResult, checkDuplicateSubmission } from '@/lib/supabase';
-import { updateScoreDistribution, calculateRank } from '@/lib/redis';
+import { saveJobWorthResult, checkDuplicateSubmission, calculateRankFromDB } from '@/lib/supabase';
+import { updateScoreDistribution } from '@/lib/redis';
 import { getClientInfo } from '@/lib/utils';
 
 // 使用Map记录最近的请求，避免重复处理
@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
       console.log(`防止重复请求: ${requestKey}, 间隔: ${now - lastRequest}ms`);
       
       // 重复请求只返回排名数据，不保存到数据库
-      const rankData = await calculateRank(score);
+      // 使用数据库计算排名，确保数据一致性
+      const rankData = await calculateRankFromDB(score);
       
       return NextResponse.json({
         success: true,
@@ -62,7 +63,8 @@ export async function POST(request: NextRequest) {
       console.log(`防止重复提交: ${ip.toString()}, 分数: ${score.toFixed(2)}`);
       
       // 数据库中已存在相同客户端信息的提交，只返回排名数据，不再保存
-      const rankData = await calculateRank(score);
+      // 使用数据库计算排名，确保数据一致性
+      const rankData = await calculateRankFromDB(score);
       
       return NextResponse.json({
         success: true,
@@ -95,11 +97,11 @@ export async function POST(request: NextRequest) {
       client_info: fullClientInfo
     });
     
-    // 更新Redis中的分数分布
+    // 更新Redis中的分数分布 (保留Redis更新以保持兼容性)
     await updateScoreDistribution(score);
     
-    // 计算排名
-    const rankData = await calculateRank(score);
+    // 计算排名 (使用数据库计算排名，确保数据一致性)
+    const rankData = await calculateRankFromDB(score);
     
     return NextResponse.json({
       success: true,

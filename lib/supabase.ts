@@ -283,4 +283,100 @@ export async function checkDuplicateSubmission(
     // 如果发生异常，为安全起见不阻止提交
     return false;
   }
+}
+
+/**
+ * 从数据库计算分数的百分位排名
+ * @param score 评估分数
+ */
+export async function getScorePercentileFromDB(score: number): Promise<{
+  percentile: string;
+  totalCount: number;
+  lowerCount: number;
+  success: boolean;
+  error?: unknown;
+}> {
+  try {
+    console.log(`从数据库计算分数 ${score.toFixed(2)} 的百分位排名`);
+    
+    // 获取总评估数量
+    const { count: totalCount, error: countError } = await supabase
+      .from('job_worth_evaluations')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      console.error('获取评估总数失败:', countError);
+      throw countError;
+    }
+
+    // 获取低于当前分数的评估数量
+    const { count: lowerCount, error: lowerError } = await supabase
+      .from('job_worth_evaluations')
+      .select('*', { count: 'exact', head: true })
+      .lt('result_score', score);
+
+    if (lowerError) {
+      console.error('获取低于分数的评估数量失败:', lowerError);
+      throw lowerError;
+    }
+
+    // 确保 totalCount 和 lowerCount 不为 null
+    const safeTotal = totalCount || 0;
+    const safeLower = lowerCount || 0;
+    
+    // 计算百分位
+    const percentile = safeTotal > 0 ? ((safeLower / safeTotal) * 100).toFixed(1) : '0';
+    
+    console.log(`分数 ${score.toFixed(2)} 的百分位排名计算结果:`, {
+      percentile,
+      totalCount: safeTotal,
+      lowerCount: safeLower
+    });
+
+    return {
+      percentile,
+      totalCount: safeTotal,
+      lowerCount: safeLower,
+      success: true
+    };
+  } catch (error) {
+    console.error('从数据库计算分数百分位失败:', error);
+    return {
+      percentile: '0',
+      totalCount: 0,
+      lowerCount: 0,
+      success: false,
+      error
+    };
+  }
+}
+
+/**
+ * 从数据库计算排名
+ * @param score 评估分数
+ */
+export async function calculateRankFromDB(score: number): Promise<{
+  percentile: string;
+  rank: number;
+  totalCount: number;
+}> {
+  try {
+    const { percentile, totalCount, lowerCount } = await getScorePercentileFromDB(score);
+    
+    // rank直接表示超过的人数，即低于当前分数的人数
+    const rank = lowerCount;
+    
+    return {
+      percentile,
+      rank,
+      totalCount
+    };
+  } catch (error) {
+    console.error('从数据库计算排名失败:', error);
+    return {
+      percentile: '0',
+      rank: 0,
+      totalCount: 0
+    };
+  }
 } 
