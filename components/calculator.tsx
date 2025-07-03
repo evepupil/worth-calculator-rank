@@ -540,48 +540,9 @@ const SalaryCalculator = () => {
 
   // 监听访客统计加载
   useEffect(() => {
-    // 延迟检查busuanzi是否已加载
-    const timer = setTimeout(() => {
-      const pv = document.getElementById('busuanzi_value_site_pv');
-      const uv = document.getElementById('busuanzi_value_site_uv');
-      
-      if (pv && pv.innerText !== '') {
-        // 直接在现有数字上加上1700000（原seeyoufarm统计数据）
-        const currentCount = parseInt(pv.innerText, 10) || 0;
-        pv.innerText = (currentCount + 1700000).toString();
-        
-        // 同时增加访客数的历史数据
-        if (uv && uv.innerText !== '') {
-          const currentUV = parseInt(uv.innerText, 10) || 0;
-          uv.innerText = (currentUV + 250000).toString();
-        }
-        
-        setVisitorVisible(true);
-      } else {
-        // 如果未加载，再次尝试
-        const retryTimer = setTimeout(() => {
-          const pv = document.getElementById('busuanzi_value_site_pv');
-          const uv = document.getElementById('busuanzi_value_site_uv');
-          
-          if (pv && pv.innerText !== '') {
-            // 直接在现有数字上加上1700000（原seeyoufarm统计数据）
-            const currentCount = parseInt(pv.innerText, 10) || 0;
-            pv.innerText = (currentCount + 1700000).toString();
-            
-            // 同时增加访客数的历史数据
-            if (uv && uv.innerText !== '') {
-              const currentUV = parseInt(uv.innerText, 10) || 0;
-              uv.innerText = (currentUV + 1300000).toString();
-            }
-            
-            setVisitorVisible(true);
-          }
-        }, 2000);
-        return () => clearTimeout(retryTimer);
-      }
-    }, 1000);
-    
-    return () => clearTimeout(timer);
+    // 不再需要监听busuanzi脚本加载，移除相关代码
+    // 访问量和访客量将完全由Redis统计数据提供
+    setVisitorVisible(true);
   }, []);
 
   // 添加滚动位置保存和恢复逻辑
@@ -1175,13 +1136,13 @@ const SalaryCalculator = () => {
         {isBrowser && (
           <div className="mt-1 text-xs text-gray-400 dark:text-gray-500 flex justify-center gap-4">
             {statsData.totalVisits !== null && (
-              <span id="busuanzi_container_site_pv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
-                {t('visits')}: <span id="busuanzi_value_site_pv">{statsData.totalVisits}</span>
+              <span className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
+                {t('visits')}: <span>{statsData.totalVisits}</span>
               </span>
             )}
             {statsData.uniqueVisitors !== null && (
-              <span id="busuanzi_container_site_uv" className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
-                {t('visitors')}: <span id="busuanzi_value_site_uv">{statsData.uniqueVisitors}</span>
+              <span className={`transition-opacity duration-300 ${visitorVisible ? 'opacity-100' : 'opacity-0'}`}>
+                {t('visitors')}: <span>{statsData.uniqueVisitors}</span>
               </span>
             )}
             {statsData.totalCount !== null && (
