@@ -760,7 +760,7 @@ const SalaryCalculator = () => {
     
     // 薪资满意度应该受到经验薪资倍数的影响
     // 相同薪资，对于高经验者来说价值更低，对应的计算公式需要考虑经验倍数
-    const calculatedValue = (dailySalary * environmentFactor) / 
+    const calculatedValue = (dailySalary * 1.2 * environmentFactor) / 
            (35 * (workHours + effectiveCommuteHours - 0.5 * restTime) * Number(formData.education) * experienceSalaryMultiplier);
     
     // 移除此处的提交逻辑，改为在下方的useEffect中处理
