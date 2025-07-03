@@ -760,8 +760,11 @@ const SalaryCalculator = () => {
     
     // 薪资满意度应该受到经验薪资倍数的影响
     // 相同薪资，对于高经验者来说价值更低，对应的计算公式需要考虑经验倍数
+    // 薪资调节因子：薪资越高，分母影响越小（0.5-1.5范围）
+    const salaryAdjustFactor = Math.min(1.5, Math.max(0.5, 1.5 - (dailySalary / 1000)));
+    
     const calculatedValue = (dailySalary * 1.2 * environmentFactor) / 
-           (35 * (workHours + effectiveCommuteHours - 0.5 * restTime) * Number(formData.education) * experienceSalaryMultiplier);
+           (35 * (workHours * salaryAdjustFactor + effectiveCommuteHours * salaryAdjustFactor - 0.5 * restTime) * Number(formData.education) * experienceSalaryMultiplier);
     
     // 移除此处的提交逻辑，改为在下方的useEffect中处理
     
