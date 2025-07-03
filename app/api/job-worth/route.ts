@@ -6,7 +6,7 @@ import { getClientInfo } from '@/lib/utils';
 // 使用Map记录最近的请求，避免重复处理
 // key: IP+分数, value: 时间戳
 const recentRequests = new Map<string, number>();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1分钟内相同IP+分数只处理一次
+const RATE_LIMIT_WINDOW = 10 * 60 * 1000; // 10分钟内相同IP+分数只处理一次
 
 export async function POST(request: NextRequest) {
   try {
