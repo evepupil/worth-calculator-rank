@@ -219,4 +219,68 @@ export async function getJobWorthStats(): Promise<{
       countByScoreRange: []
     };
   }
+}
+
+/**
+ * 检查是否存在重复提交
+ * @param clientInfo 客户端信息
+ * @param score 评估分数
+ * @returns 是否存在重复提交
+ */
+export async function checkDuplicateSubmission(
+  clientInfo: {
+    ip?: string;
+    userAgent?: string;
+    country?: string;
+    city?: string;
+  },
+  score: number
+): Promise<boolean> {
+  try {
+    // 如果没有IP信息，无法进行重复检查
+    if (!clientInfo.ip || clientInfo.ip === '未知') {
+      console.log('无法检查重复提交: 缺少IP信息');
+      return false;
+    }
+
+    console.log(`检查IP ${clientInfo.ip} 在过去10分钟内的提交记录`);
+    
+    // 查询最近10分钟内相同IP的提交记录
+    const tenMinutesAgo = new Date();
+    tenMinutesAgo.setMinutes(tenMinutesAgo.getMinutes() - 10);
+
+    // 使用正确的JSON查询语法
+    const { data, error } = await supabase
+      .from('job_worth_evaluations')
+      .select('id, created_at, result_score')
+      .contains('client_info', { ip: clientInfo.ip })
+      .gte('created_at', tenMinutesAgo.toISOString());
+
+    if (error) {
+      console.error('检查重复提交失败:', error);
+      // 如果发生错误，为安全起见不阻止提交
+      return false;
+    }
+
+    // 如果有任何记录，则认为是重复提交
+    const hasRecent = data && data.length > 0;
+    
+    if (hasRecent) {
+      console.log(`发现IP ${clientInfo.ip} 在过去10分钟内有 ${data?.length || 0} 条提交记录`);
+      // 记录找到的记录，帮助调试
+      if (data && data.length > 0) {
+        data.forEach(record => {
+          console.log(`- ID: ${record.id}, 时间: ${record.created_at}, 分数: ${record.result_score}`);
+        });
+      }
+    } else {
+      console.log(`IP ${clientInfo.ip} 在过去10分钟内没有提交记录`);
+    }
+    
+    return hasRecent;
+  } catch (error) {
+    console.error('检查重复提交时发生异常:', error);
+    // 如果发生异常，为安全起见不阻止提交
+    return false;
+  }
 } 

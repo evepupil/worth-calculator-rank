@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveJobWorthResult } from '@/lib/supabase';
+import { saveJobWorthResult, checkDuplicateSubmission } from '@/lib/supabase';
 import { updateScoreDistribution, calculateRank } from '@/lib/redis';
 import { getClientInfo } from '@/lib/utils';
 
@@ -28,6 +28,12 @@ export async function POST(request: NextRequest) {
                request.headers.get('x-real-ip') || 
                '未知';
     
+    // 完整的客户端信息，包含IP
+    const fullClientInfo = {
+      ...clientInfo,
+      ip: ip.toString()
+    };
+
     // 创建请求标识
     const requestKey = `${ip.toString()}-${score.toFixed(2)}`;
     const now = Date.now();
@@ -50,6 +56,25 @@ export async function POST(request: NextRequest) {
       });
     }
     
+    // 检查数据库中是否已存在相同客户端信息的提交记录
+    const isDuplicate = await checkDuplicateSubmission(fullClientInfo, score);
+    if (isDuplicate) {
+      console.log(`防止重复提交: ${ip.toString()}, 分数: ${score.toFixed(2)}`);
+      
+      // 数据库中已存在相同客户端信息的提交，只返回排名数据，不再保存
+      const rankData = await calculateRank(score);
+      
+      return NextResponse.json({
+        success: true,
+        score,
+        percentile: rankData.percentile,
+        rank: rankData.rank,
+        totalCount: rankData.totalCount,
+        fromCache: true,
+        message: '同一IP在10分钟内不能重复提交，请稍后再试'
+      });
+    }
+    
     // 更新请求记录
     recentRequests.set(requestKey, now);
     
@@ -67,10 +92,7 @@ export async function POST(request: NextRequest) {
       input_data: formData,
       result_score: score,
       created_at: new Date().toISOString(),
-      client_info: {
-        ...clientInfo,
-        ip: ip.toString()
-      }
+      client_info: fullClientInfo
     });
     
     // 更新Redis中的分数分布

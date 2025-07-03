@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateScoreDistribution, getScorePercentile } from '@/lib/redis';
-import { getJobWorthStats } from '@/lib/supabase';
+import { getJobWorthStats, checkDuplicateSubmission } from '@/lib/supabase';
+import { getClientInfo } from '@/lib/utils';
 
 // 使用Map记录最近的请求，避免重复处理
 // key: IP+分数，value: 时间戳
@@ -19,10 +20,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 获取客户端信息
+    const clientInfo = getClientInfo();
+
     // 获取客户端IP
     const ip = request.headers.get('x-forwarded-for') || 
               request.headers.get('x-real-ip') || 
               '未知';
+    
+    // 完整的客户端信息，包含IP
+    const fullClientInfo = {
+      ...clientInfo,
+      ip: ip.toString()
+    };
     
     // 创建请求标识，使用IP+分数作为键
     const requestKey = `${ip}-${score.toFixed(2)}`;
@@ -52,6 +62,34 @@ export async function POST(request: NextRequest) {
         totalCount: totalCount,
         showRanking,
         fromCache: true
+      });
+    }
+    
+    // 检查数据库中是否已存在相同客户端信息的提交记录
+    const isDuplicate = await checkDuplicateSubmission(fullClientInfo, score);
+    if (isDuplicate) {
+      console.log(`防止重复提交: ${ip.toString()}, 分数: ${score.toFixed(2)}`);
+      
+      // 数据库中已存在相同客户端信息的提交，只返回排名数据，不更新统计
+      const [percentileData, jobWorthStats] = await Promise.all([
+        getScorePercentile(score),
+        getJobWorthStats()
+      ]);
+      
+      // 使用Supabase中的实际评估记录数量
+      const totalCount = jobWorthStats.total;
+      
+      // 检查样本数是否足够
+      const showRanking = totalCount >= 1;
+      
+      return NextResponse.json({
+        success: true,
+        percentile: showRanking ? percentileData.percentile : null,
+        rank: showRanking ? percentileData.totalCount - percentileData.lowerCount : null,
+        totalCount: totalCount,
+        showRanking,
+        fromCache: true,
+        message: '同一IP在10分钟内不能重复提交，请稍后再试'
       });
     }
     
